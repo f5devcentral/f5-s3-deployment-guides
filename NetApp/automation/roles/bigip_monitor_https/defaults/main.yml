@@ -1,0 +1,6 @@
+---
+monitor_state: present
+storagegrid_monitor_name: Options_HTTPS_StorageGRID
+storagegrid_monitor_parent: /Common/https
+storagegrid_monitor_send: "OPTIONS / HTTP/1.1\r\n\r\n"
+storagegrid_monitor_receive: "HTTP/1.1 200 OK"

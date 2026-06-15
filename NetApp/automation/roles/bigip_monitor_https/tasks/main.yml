@@ -1,0 +1,11 @@
+---
+- name: "Ensure StorageGRID HTTPS health monitor exists"
+  f5networks.f5_modules.bigip_monitor_https:
+    provider: "{{ provider }}"
+    partition: "{{ default_tenant }}"
+    name: "{{ storagegrid_monitor_name }}"
+    parent: "{{ storagegrid_monitor_parent }}"
+    send: "{{ storagegrid_monitor_send }}"
+    receive: "{{ storagegrid_monitor_receive }}"
+    state: "{{ monitor_state }}"
+  tags: [monitor]

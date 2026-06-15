@@ -1,0 +1,55 @@
+---
+# =============================================================================
+# Service catalog — single source of truth for BIG-IP LTM objects.
+#
+# Adding a service = appending an entry below. No role or playbook changes.
+# Each entry materialises three things on BIG-IP:
+#   - pool          : pool.name or <name> + pool_name_suffix
+#   - virtual server: virtual_server.name or <name> + vs_name_suffix
+#   - nodes         : one per pool member, named after `members[].name`
+#
+# Suffixes (`pool_name_suffix`, `vs_name_suffix`) and `default_tenant` are
+# defined in inventories/<env>/group_vars/all.yml. Per-role behavioural
+# defaults (lb_method, monitor, vs port/profiles, snat, *_state) live in
+# roles/<role>/defaults/main.yml and can be overridden per service below.
+#
+# Per-service fields:
+#   name              : logical name; used as the prefix for pool & VS objects
+#   tenant            : (optional) BIG-IP partition; default = default_tenant
+#   virtual_server:
+#     name            : (optional) BIG-IP virtual server name
+#     destination     : external VIP address
+#     port            : (optional) VIP port; default = 443
+#     profiles        : (optional) list of profiles attached to the VS.
+#     snat            : (optional) 'automap' | 'none' | <snat-pool-name>
+#   pool:
+#     name            : (optional) BIG-IP pool name
+#     lb_method       : (optional) load balancing method; default = least-connections-member
+#     monitor         : (optional) health monitor name; default = Options_HTTPS_StorageGRID
+#     members         : list of { name, address, port }
+#
+# Dry run: `ansible-playbook playbooks/site.yml --check --diff`
+# =============================================================================
+
+services:
+  - name: storagegrid_s3
+    tenant: Common
+    virtual_server:
+      name: StorageGRID_S3_Virtual_Server
+      destination: 10.150.92.131
+      port: 443
+      profiles:
+        - http
+        - name: clientssl
+          context: client-side
+        - name: serverssl
+          context: server-side
+      snat: automap
+    pool:
+      name: storageGRID_Pool
+      lb_method: least-connections-member
+      monitor: Options_HTTPS_StorageGRID
+      members:
+        - { name: storagenode-01, address: 10.150.91.106, port: 18082 }
+        - { name: storagenode-02, address: 10.150.91.107, port: 18082 }
+        - { name: storagenode-03, address: 10.150.91.108, port: 18082 }

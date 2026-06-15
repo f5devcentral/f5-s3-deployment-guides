@@ -1,0 +1,6 @@
+---
+pool_state: present
+default_lb_method: least-connections-member
+default_monitor: Options_HTTPS_StorageGRID
+# pool_name_suffix is defined in inventories/.../group_vars/all.yml
+# (shared with bigip_virtual_server).

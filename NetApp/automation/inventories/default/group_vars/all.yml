@@ -1,0 +1,17 @@
+---
+# Connection defaults shared by all groups.
+# F5 modules run locally and talk to BIG-IP over iControl REST.
+ansible_connection: local
+ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+# Default tenant (BIG-IP partition). Per-service `tenant` overrides this.
+default_tenant: Common
+
+# Project-wide naming convention for derived BIG-IP objects.
+# Both bigip_pool and bigip_virtual_server roles read these — single source
+# of truth so the VS always points at the correct pool name.
+pool_name_suffix: _pool
+vs_name_suffix: _vs
+
+# Load service definitions from a single source of truth.
+services_file: "{{ playbook_dir }}/../vars/services.yml"
