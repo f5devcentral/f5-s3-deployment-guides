@@ -1,0 +1,13 @@
+---
+# bigip_ssl_certs defaults.
+#
+# Local working directory for generated key/CSR/cert material. Kept stable
+# (not a random tempdir) so re-runs are idempotent and don't rotate the cert
+# on every play. Gitignored — never commit private keys.
+ssl_local_certdir: "{{ playbook_dir }}/../.tls"
+
+# Defaults for generated self-signed certificates. Override per profile with a
+# `self_signed:` block in vars/services.yml (key_size, common_name, days,
+# subject_alt_name).
+ssl_default_key_size: 2048
+ssl_default_days: 825

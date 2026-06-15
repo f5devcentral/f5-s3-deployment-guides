@@ -1,0 +1,188 @@
+---
+# =============================================================================
+# Service catalog — single source of truth for BIG-IP LTM objects.
+#
+# Two top-level keys:
+#   profiles : custom TCP/SSL profiles created once and shared by services
+#   services : the pools, virtual servers and nodes to materialise
+#
+# Adding a service = appending an entry under `services:`. No role or playbook
+# changes. Each service entry materialises three things on BIG-IP:
+#   - pool          : <name> + pool_name_suffix    (e.g. dell_s3_http_cluster_pool)
+#   - virtual server: <name> + vs_name_suffix      (e.g. dell_s3_http_cluster_vs)
+#   - nodes         : one per pool member, named after `members[].name`
+#
+# Suffixes (`pool_name_suffix`, `vs_name_suffix`) and `default_tenant` are
+# defined in inventories/<env>/group_vars/all.yml. Per-role behavioural
+# defaults (lb_method, monitor, vs port/profiles, snat, connection limit,
+# *_state) live in roles/<role>/defaults/main.yml and can be overridden below.
+#
+# -----------------------------------------------------------------------------
+# profiles: custom profiles created by the bigip_profiles role (guide 2.3).
+#   tcp:
+#     - name              : profile name
+#       parent            : (optional) parent profile to inherit from
+#       nagle             : (optional) 'auto' | 'enabled' | 'disabled'
+#       # congestion_control is not supported by the current module yet.
+#   client_ssl / server_ssl:
+#     - name        : profile name
+#       parent      : (optional) parent profile (clientssl / serverssl)
+#       cert        : (client_ssl, optional) certificate object name on BIG-IP
+#       key         : (client_ssl, optional) key object name on BIG-IP
+#       self_signed : (client_ssl, optional) generate a self-signed cert/key
+#                     (common_name, days, key_size, subject_alt_name) and upload
+#                     it under cert/key above via the bigip_ssl_certs role
+#   NOTE: bigip_profile_tcp does not expose every GUI knob from guide 2.3.2
+#   (minimum RTO, proxy buffers, auto receive window, tail loss); those are
+#   inherited from the parent. Apply the rest manually/via tmsh if required.
+# -----------------------------------------------------------------------------
+# Per-service fields:
+#   name              : logical name; used as the prefix for pool & VS objects
+#   tenant            : (optional) BIG-IP partition; default = default_tenant
+#   virtual_server:
+#     destination     : external VIP address
+#     port            : (optional) VIP port; default = 443
+#     profiles        : (optional) list of profiles attached to the VS. Each
+#                       item is a name (context 'all') or a mapping with
+#                       `name` + `context` ('client-side' | 'server-side').
+#     snat            : (optional) 'automap' | 'none' | <snat-pool-name>
+#   pool:
+#     lb_method       : (optional) load balancing method; default = round-robin
+#     monitor         : (optional) health monitor name; default = http
+#     members         : list of { name, address, port, connection_limit? }
+#                       connection_limit defaults to default_member_connection_limit.
+#
+# Dry run: `ansible-playbook playbooks/site.yml --check --diff`
+# =============================================================================
+
+profiles:
+  # Custom TCP profiles tuned for S3 traffic (guide 2.3.2).
+  tcp:
+    - name: s3-tcp-custom-client   # client side: S3 client <-> BIG-IP
+      parent: s3-tcp
+      nagle: auto
+    - name: s3-tcp-custom-server   # server side: BIG-IP <-> Dell OBS nodes
+      parent: f5-tcp-lan
+  # Custom SSL profiles for the encrypted path (guide 2.3.3).
+  client_ssl:
+    - name: clientssl-dell-profile   # terminates TLS from S3 clients
+      parent: clientssl
+      cert: clientssl-dell           # cert object name created on BIG-IP
+      key: clientssl-dell            # key object name created on BIG-IP
+      # Generate a self-signed cert/key (bigip_ssl_certs role) and attach it.
+      # Drop this block and pre-import a CA-signed cert/key under the names
+      # above to present a certificate trusted by your S3 clients.
+      self_signed:
+        common_name: dell-s3.example.com
+        days: 825
+        # subject_alt_name: ["DNS:dell-s3.example.com", "IP:100.1.1.182"]
+  server_ssl:
+    - name: serverssl-dell-profile   # re-encrypts to the OBS nodes
+      parent: serverssl
+
+services:
+  # ---------------------------------------------------------------------------
+  # Unencrypted path: HTTP from S3 client to BIG-IP, unencrypted to OBS (9020).
+  # ---------------------------------------------------------------------------
+  - name: dell_s3_http_cluster
+    tenant: Common
+    virtual_server:
+      destination: 100.1.1.182
+      port: 80
+      profiles:
+        - { name: s3-tcp-custom-client, context: client-side }
+        - { name: s3-tcp-custom-server, context: server-side }
+        - http
+      snat: automap
+    pool:
+      lb_method: least-connections-member
+      monitor: http
+      members:
+        - { name: dell_node_01, address: 172.16.0.161, port: 9020 }
+        - { name: dell_node_02, address: 172.16.0.162, port: 9020 }
+        - { name: dell_node_03, address: 172.16.0.163, port: 9020 }
+        - { name: dell_node_04, address: 172.16.0.164, port: 9020 }
+        - { name: dell_node_05, address: 172.16.0.165, port: 9020 }
+        - { name: dell_node_06, address: 172.16.0.166, port: 9020 }
+        - { name: dell_node_07, address: 172.16.0.167, port: 9020 }
+        - { name: dell_node_08, address: 172.16.0.168, port: 9020 }
+        - { name: dell_node_09, address: 172.16.0.169, port: 9020 }
+        - { name: dell_node_10, address: 172.16.0.170, port: 9020 }
+        - { name: dell_node_11, address: 172.16.0.171, port: 9020 }
+        - { name: dell_node_12, address: 172.16.0.172, port: 9020 }
+        - { name: dell_node_13, address: 172.16.0.173, port: 9020 }
+        - { name: dell_node_14, address: 172.16.0.174, port: 9020 }
+        - { name: dell_node_15, address: 172.16.0.175, port: 9020 }
+        - { name: dell_node_16, address: 172.16.0.176, port: 9020 }
+        - { name: dell_node_17, address: 172.16.0.177, port: 9020 }
+        - { name: dell_node_18, address: 172.16.0.178, port: 9020 }
+        - { name: dell_node_19, address: 172.16.0.179, port: 9020 }
+        - { name: dell_node_20, address: 172.16.0.180, port: 9020 }
+        - { name: dell_node_21, address: 172.16.0.181, port: 9020 }
+        - { name: dell_node_22, address: 172.16.0.182, port: 9020 }
+        - { name: dell_node_23, address: 172.16.0.183, port: 9020 }
+        - { name: dell_node_24, address: 172.16.0.184, port: 9020 }
+        - { name: dell_node_25, address: 172.16.0.185, port: 9020 }
+        - { name: dell_node_26, address: 172.16.0.186, port: 9020 }
+        - { name: dell_node_27, address: 172.16.0.187, port: 9020 }
+        - { name: dell_node_28, address: 172.16.0.188, port: 9020 }
+        - { name: dell_node_29, address: 172.16.0.189, port: 9020 }
+        - { name: dell_node_30, address: 172.16.0.190, port: 9020 }
+        - { name: dell_node_31, address: 172.16.0.191, port: 9020 }
+        - { name: dell_node_32, address: 172.16.0.192, port: 9020 }
+
+  # ---------------------------------------------------------------------------
+  # Encrypted path: HTTPS (TLS) from S3 client to BIG-IP, re-encrypted to OBS
+  # (9021). The VS terminates client TLS with clientssl-dell-profile and
+  # initiates a new TLS session to the nodes with serverssl-dell-profile.
+  # Shares the same nodes as the HTTP service above (a BIG-IP node is keyed by
+  # address, so the names match and only the pool member port differs).
+  # ---------------------------------------------------------------------------
+  - name: dell_s3_https_cluster
+    tenant: Common
+    virtual_server:
+      destination: 100.1.1.182
+      port: 443
+      profiles:
+        - { name: s3-tcp-custom-client, context: client-side }
+        - { name: s3-tcp-custom-server, context: server-side }
+        - http
+        - { name: clientssl-dell-profile, context: client-side }
+        - { name: serverssl-dell-profile, context: server-side }
+      snat: automap
+    pool:
+      lb_method: least-connections-member
+      monitor: https
+      members:
+        - { name: dell_node_01, address: 172.16.0.161, port: 9021 }
+        - { name: dell_node_02, address: 172.16.0.162, port: 9021 }
+        - { name: dell_node_03, address: 172.16.0.163, port: 9021 }
+        - { name: dell_node_04, address: 172.16.0.164, port: 9021 }
+        - { name: dell_node_05, address: 172.16.0.165, port: 9021 }
+        - { name: dell_node_06, address: 172.16.0.166, port: 9021 }
+        - { name: dell_node_07, address: 172.16.0.167, port: 9021 }
+        - { name: dell_node_08, address: 172.16.0.168, port: 9021 }
+        - { name: dell_node_09, address: 172.16.0.169, port: 9021 }
+        - { name: dell_node_10, address: 172.16.0.170, port: 9021 }
+        - { name: dell_node_11, address: 172.16.0.171, port: 9021 }
+        - { name: dell_node_12, address: 172.16.0.172, port: 9021 }
+        - { name: dell_node_13, address: 172.16.0.173, port: 9021 }
+        - { name: dell_node_14, address: 172.16.0.174, port: 9021 }
+        - { name: dell_node_15, address: 172.16.0.175, port: 9021 }
+        - { name: dell_node_16, address: 172.16.0.176, port: 9021 }
+        - { name: dell_node_17, address: 172.16.0.177, port: 9021 }
+        - { name: dell_node_18, address: 172.16.0.178, port: 9021 }
+        - { name: dell_node_19, address: 172.16.0.179, port: 9021 }
+        - { name: dell_node_20, address: 172.16.0.180, port: 9021 }
+        - { name: dell_node_21, address: 172.16.0.181, port: 9021 }
+        - { name: dell_node_22, address: 172.16.0.182, port: 9021 }
+        - { name: dell_node_23, address: 172.16.0.183, port: 9021 }
+        - { name: dell_node_24, address: 172.16.0.184, port: 9021 }
+        - { name: dell_node_25, address: 172.16.0.185, port: 9021 }
+        - { name: dell_node_26, address: 172.16.0.186, port: 9021 }
+        - { name: dell_node_27, address: 172.16.0.187, port: 9021 }
+        - { name: dell_node_28, address: 172.16.0.188, port: 9021 }
+        - { name: dell_node_29, address: 172.16.0.189, port: 9021 }
+        - { name: dell_node_30, address: 172.16.0.190, port: 9021 }
+        - { name: dell_node_31, address: 172.16.0.191, port: 9021 }
+        - { name: dell_node_32, address: 172.16.0.192, port: 9021 }

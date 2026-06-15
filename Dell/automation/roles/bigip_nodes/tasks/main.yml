@@ -1,0 +1,16 @@
+---
+- name: "Manage BIG-IP nodes for all services"
+  f5networks.f5_modules.bigip_node:
+    provider: "{{ provider }}"
+    partition: "{{ item.0.tenant | default(default_tenant) }}"
+    name: "{{ item.1.name }}"
+    address: "{{ item.1.address }}"
+    state: "{{ node_state }}"
+  register: _bigip_node_result
+  until: _bigip_node_result is succeeded
+  retries: "{{ node_retries }}"
+  delay: "{{ node_retry_delay }}"
+  loop: "{{ services | subelements('pool.members') }}"
+  loop_control:
+    label: "{{ item.0.name }}/{{ item.1.name }} ({{ item.1.address }})"
+  tags: [nodes]

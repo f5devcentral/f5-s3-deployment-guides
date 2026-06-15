@@ -1,0 +1,4 @@
+---
+node_state: present
+node_retries: 3
+node_retry_delay: 5

@@ -1,0 +1,94 @@
+---
+# Generate self-signed certificates and upload them to BIG-IP so the client SSL
+# profile can present a real (lab) certificate instead of inheriting the parent
+# profile's default. Only client_ssl entries that carry a `self_signed:` block
+# are processed (guide 2.3.3.1). For production, import certificates from a
+# trusted CA and drop the `self_signed:` block.
+
+- name: "Select client SSL profiles that request a self-signed certificate"
+  ansible.builtin.set_fact:
+    _self_signed_profiles: >-
+      {{ profiles.client_ssl | default([])
+         | selectattr('self_signed', 'defined') | list }}
+  tags: [ssl_certs]
+
+- name: "Create local working directory for generated certificates"
+  ansible.builtin.file:
+    path: "{{ ssl_local_certdir }}"
+    state: directory
+    mode: "0700"
+  delegate_to: localhost
+  run_once: true
+  check_mode: false
+  when: _self_signed_profiles | length > 0
+  tags: [ssl_certs]
+
+- name: "Generate private keys (control node)"
+  community.crypto.openssl_privatekey:
+    path: "{{ ssl_local_certdir }}/{{ item.key }}.key"
+    size: "{{ item.self_signed.key_size | default(ssl_default_key_size) }}"
+    type: RSA
+    mode: "0600"
+  delegate_to: localhost
+  run_once: true
+  check_mode: false
+  loop: "{{ _self_signed_profiles }}"
+  loop_control:
+    label: "{{ item.key }}.key"
+  tags: [ssl_certs]
+
+- name: "Generate certificate signing requests (control node)"
+  community.crypto.openssl_csr:
+    path: "{{ ssl_local_certdir }}/{{ item.cert }}.csr"
+    privatekey_path: "{{ ssl_local_certdir }}/{{ item.key }}.key"
+    common_name: "{{ item.self_signed.common_name }}"
+    subject_alt_name: "{{ item.self_signed.subject_alt_name | default(omit) }}"
+    mode: "0600"
+  delegate_to: localhost
+  run_once: true
+  check_mode: false
+  loop: "{{ _self_signed_profiles }}"
+  loop_control:
+    label: "{{ item.cert }} (CN={{ item.self_signed.common_name }})"
+  tags: [ssl_certs]
+
+- name: "Self-sign the certificates (control node)"
+  community.crypto.x509_certificate:
+    path: "{{ ssl_local_certdir }}/{{ item.cert }}.crt"
+    csr_path: "{{ ssl_local_certdir }}/{{ item.cert }}.csr"
+    privatekey_path: "{{ ssl_local_certdir }}/{{ item.key }}.key"
+    provider: selfsigned
+    selfsigned_not_after: "+{{ item.self_signed.days | default(ssl_default_days) }}d"
+    mode: "0600"
+  delegate_to: localhost
+  run_once: true
+  check_mode: false
+  loop: "{{ _self_signed_profiles }}"
+  loop_control:
+    label: "{{ item.cert }}.crt"
+  tags: [ssl_certs]
+
+- name: "Upload private keys to BIG-IP"
+  f5networks.f5_modules.bigip_ssl_key:
+    provider: "{{ provider }}"
+    partition: "{{ item.tenant | default(default_tenant) }}"
+    name: "{{ item.key }}"
+    content: "{{ lookup('file', ssl_local_certdir ~ '/' ~ item.key ~ '.key') }}"
+    state: present
+  loop: "{{ _self_signed_profiles }}"
+  loop_control:
+    label: "{{ item.key }}"
+  no_log: true
+  tags: [ssl_certs]
+
+- name: "Upload certificates to BIG-IP"
+  f5networks.f5_modules.bigip_ssl_certificate:
+    provider: "{{ provider }}"
+    partition: "{{ item.tenant | default(default_tenant) }}"
+    name: "{{ item.cert }}"
+    content: "{{ lookup('file', ssl_local_certdir ~ '/' ~ item.cert ~ '.crt') }}"
+    state: present
+  loop: "{{ _self_signed_profiles }}"
+  loop_control:
+    label: "{{ item.cert }}"
+  tags: [ssl_certs]

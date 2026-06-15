@@ -1,0 +1,27 @@
+---
+# Deploy a single service (or all by default).
+# Usage:
+#   ansible-playbook playbooks/deploy_service.yml -e service_name=web_app1
+- name: "BIG-IP :: deploy service"
+  hosts: bigip
+  gather_facts: false
+  vars_files:
+    - "{{ services_file }}"
+  vars:
+    service_name: ""
+  pre_tasks:
+    - name: "Resolve target services"
+      ansible.builtin.import_tasks: tasks/_filter_services.yml
+  roles:
+    - role: bigip_common
+      tags: [common, always]
+    - role: bigip_ssl_certs
+      tags: [profiles, ssl_certs]
+    - role: bigip_profiles
+      tags: [profiles]
+    - role: bigip_nodes
+      tags: [nodes]
+    - role: bigip_pool
+      tags: [pool]
+    - role: bigip_virtual_server
+      tags: [vs]

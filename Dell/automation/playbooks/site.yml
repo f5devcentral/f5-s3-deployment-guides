@@ -1,0 +1,20 @@
+---
+# Top-level orchestrator: deploys every service in vars/services.yml.
+- name: "BIG-IP :: full deploy"
+  hosts: bigip
+  gather_facts: false
+  vars_files:
+    - "../vars/services.yml"
+  roles:
+    - role: bigip_common
+      tags: [common, always]
+    - role: bigip_ssl_certs
+      tags: [profiles, ssl_certs]
+    - role: bigip_profiles
+      tags: [profiles]
+    - role: bigip_nodes
+      tags: [nodes]
+    - role: bigip_pool
+      tags: [pool]
+    - role: bigip_virtual_server
+      tags: [vs]

@@ -1,0 +1,55 @@
+---
+# Create the custom TCP and SSL profiles referenced by the virtual servers.
+# Profiles are shared infrastructure (multiple services can attach the same
+# profile), so this role runs before pools/virtual servers on deploy and is
+# intentionally NOT part of teardown_service.yml — removing a shared profile
+# would break any other service still using it.
+
+- name: "Ensure custom TCP profiles exist"
+  f5networks.f5_modules.bigip_profile_tcp:
+    provider: "{{ provider }}"
+    partition: "{{ item.tenant | default(default_tenant) }}"
+    name: "{{ item.name }}"
+    parent: "{{ item.parent | default(omit) }}"
+    nagle: "{{ item.nagle | default(omit) }}"
+    state: "{{ profile_state }}"
+  loop: "{{ profiles.tcp | default([]) }}"
+  loop_control:
+    label: "{{ item.name }} (parent={{ item.parent | default('tcp') }})"
+  tags: [profiles, tcp_profiles]
+
+# NOTE: bigip_profile_tcp does not expose every knob the guide tunes in the
+# GUI (minimum RTO, proxy buffer high/low, auto receive window, tail loss).
+# Those are inherited from the parent profile here; apply the remaining
+# fine-tuning from guide section 2.3.2 manually or via tmsh if required.
+
+- name: "Ensure custom Client SSL profiles exist"
+  f5networks.f5_modules.bigip_profile_client_ssl:
+    provider: "{{ provider }}"
+    partition: "{{ item.tenant | default(default_tenant) }}"
+    name: "{{ item.name }}"
+    parent: "{{ item.parent | default(omit) }}"
+    # Omit the cert/key chain to inherit the parent profile's certificate
+    # (the built-in clientssl default). Set `cert:`/`key:` in the catalog to
+    # present a certificate trusted by your S3 clients (see guide 2.3.3.1).
+    cert_key_chain: "{{ [{'cert': item.cert, 'key': item.key}] if (item.cert is defined and item.key is defined) else omit }}"
+    state: "{{ profile_state }}"
+  loop: "{{ profiles.client_ssl | default([]) }}"
+  loop_control:
+    label: "{{ item.name }} (parent={{ item.parent | default('clientssl') }})"
+  tags: [profiles, ssl_profiles]
+
+- name: "Ensure custom Server SSL profiles exist"
+  f5networks.f5_modules.bigip_profile_server_ssl:
+    provider: "{{ provider }}"
+    partition: "{{ item.tenant | default(default_tenant) }}"
+    name: "{{ item.name }}"
+    parent: "{{ item.parent | default(omit) }}"
+    # The built-in serverssl parent does not validate the backend certificate,
+    # which matches "Server Certificate: Ignore" from guide 2.3.3.2 — fine for
+    # OBS nodes using self-signed certs. Front a trusted CA in production.
+    state: "{{ profile_state }}"
+  loop: "{{ profiles.server_ssl | default([]) }}"
+  loop_control:
+    label: "{{ item.name }} (parent={{ item.parent | default('serverssl') }})"
+  tags: [profiles, ssl_profiles]

@@ -1,0 +1,13 @@
+---
+# bigip_profiles defaults.
+#
+# The actual profile definitions live in vars/services.yml under the
+# top-level `profiles:` key (single source of truth). These empty defaults
+# only guard the role so it stays safe to run when a profile category is
+# omitted from the catalog.
+profile_state: present
+
+profiles:
+  tcp: []
+  client_ssl: []
+  server_ssl: []

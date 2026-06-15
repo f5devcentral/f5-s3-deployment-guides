@@ -1,0 +1,32 @@
+---
+- name: "Ensure pools exist"
+  f5networks.f5_modules.bigip_pool:
+    provider: "{{ provider }}"
+    partition: "{{ item.tenant | default(default_tenant) }}"
+    name: "{{ item.name }}{{ pool_name_suffix }}"
+    lb_method: "{{ item.pool.lb_method | default(default_lb_method) }}"
+    monitors:
+      - "{{ item.pool.monitor | default(default_monitor) }}"
+    state: "{{ pool_state }}"
+  loop: "{{ services }}"
+  loop_control:
+    label: "{{ item.name }}{{ pool_name_suffix }}"
+  tags: [pool]
+
+- name: "Ensure pool members are attached"
+  f5networks.f5_modules.bigip_pool_member:
+    provider: "{{ provider }}"
+    partition: "{{ item.0.tenant | default(default_tenant) }}"
+    pool: "{{ item.0.name }}{{ pool_name_suffix }}"
+    name: "{{ item.1.name }}"
+    host: "{{ item.1.address }}"
+    port: "{{ item.1.port }}"
+    # Cap concurrent connections per member. Dell OBS nodes support up to
+    # 1,000 S3 connections each (guide 2.3.1); 0 means unlimited. Set at the
+    # member level so each pool can be tuned independently.
+    connection_limit: "{{ item.1.connection_limit | default(default_member_connection_limit) }}"
+    state: "{{ pool_state }}"
+  loop: "{{ services | subelements('pool.members') }}"
+  loop_control:
+    label: "{{ item.0.name }}{{ pool_name_suffix }} <- {{ item.1.name }}:{{ item.1.port }}"
+  tags: [pool, members]

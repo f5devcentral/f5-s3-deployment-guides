@@ -1,0 +1,9 @@
+---
+vs_state: present
+default_vs_port: 443
+default_vs_profiles:
+  - http
+  - tcp
+default_snat: automap
+# vs_name_suffix and pool_name_suffix are defined in
+# inventories/.../group_vars/all.yml (shared with bigip_pool).

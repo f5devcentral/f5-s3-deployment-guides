@@ -1,0 +1,7 @@
+ansible-core>=2.16
+# f5_modules talks to BIG-IP over iControl REST.
+# netaddr is used internally by some f5 modules / ipaddr filters.
+netaddr>=0.8.0
+# cryptography backs community.crypto for self-signed cert generation
+# (bigip_ssl_certs role).
+cryptography>=41.0.0
