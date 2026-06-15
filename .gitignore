@@ -1,0 +1,28 @@
+# Secrets / local env
+.env
+*.retry
+.vault_pass
+
+# Generated TLS material (self-signed lab certs, private keys) — never commit
+.tls/
+
+# Ansible artifacts
+collections/
+*.log
+
+# Lint caches
+.cache/
+.ansible/
+.ansible-lint-cache/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+.DS_Store
