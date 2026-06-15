@@ -1,0 +1,78 @@
+---
+name: lint
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: yamllint + ansible-lint + syntax-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Dell/automation/requirements.txt -r Dell/automation/requirements-dev.txt
+
+      - name: Install Ansible collections
+        working-directory: Dell/automation
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: yamllint
+        working-directory: Dell/automation
+        run: yamllint --strict .
+
+      - name: ansible-lint
+        working-directory: Dell/automation
+        run: ansible-lint
+
+      - name: Syntax check (site.yml)
+        working-directory: Dell/automation
+        env:
+          F5_HOST: bigip01.example.com
+          F5_USER: admin
+          F5_PASSWORD: dummy
+        run: ansible-playbook playbooks/site.yml --syntax-check
+
+      - name: Syntax check (deploy_service.yml)
+        working-directory: Dell/automation
+        env:
+          F5_HOST: bigip01.example.com
+          F5_USER: admin
+          F5_PASSWORD: dummy
+        run: ansible-playbook playbooks/deploy_service.yml --syntax-check
+
+      - name: Syntax check (teardown_service.yml)
+        working-directory: Dell/automation
+        env:
+          F5_HOST: bigip01.example.com
+          F5_USER: admin
+          F5_PASSWORD: dummy
+        run: ansible-playbook playbooks/teardown_service.yml --syntax-check
+
+  secrets:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
