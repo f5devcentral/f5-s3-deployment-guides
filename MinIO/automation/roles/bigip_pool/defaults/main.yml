@@ -1,0 +1,6 @@
+---
+pool_state: present
+default_lb_method: round-robin
+default_monitor: minio-health-check
+# pool_name_suffix is defined in inventories/.../group_vars/all.yml
+# (shared with bigip_virtual_server).

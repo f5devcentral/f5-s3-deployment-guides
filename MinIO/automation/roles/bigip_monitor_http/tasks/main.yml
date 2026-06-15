@@ -1,0 +1,11 @@
+---
+- name: "Ensure MinIO AIStor HTTP health monitor exists"
+  f5networks.f5_modules.bigip_monitor_http:
+    provider: "{{ provider }}"
+    partition: "{{ default_tenant }}"
+    name: "{{ minio_monitor_name }}"
+    parent: "{{ minio_monitor_parent }}"
+    send: "{{ minio_monitor_send }}"
+    receive: "{{ minio_monitor_receive }}"
+    state: "{{ monitor_state }}"
+  tags: [monitor]

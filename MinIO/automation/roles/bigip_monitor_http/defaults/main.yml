@@ -1,0 +1,6 @@
+---
+monitor_state: present
+minio_monitor_name: minio-health-check
+minio_monitor_parent: /Common/http
+minio_monitor_send: "HEAD /minio/health/cluster HTTP/1.1\r\nHost:localhost\r\n\r\n"
+minio_monitor_receive: "HTTP/1.1 200 OK"

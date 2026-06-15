@@ -1,0 +1,49 @@
+---
+# =============================================================================
+# Service catalog — single source of truth for BIG-IP LTM objects.
+#
+# Adding a service = appending an entry below. No role or playbook changes.
+# Each entry materialises three things on BIG-IP:
+#   - pool          : <name> + pool_name_suffix    (e.g. minio_s3_http_cluster_pool)
+#   - virtual server: <name> + vs_name_suffix      (e.g. minio_s3_http_cluster_vs)
+#   - nodes         : one per pool member, named after `members[].name`
+#
+# Suffixes (`pool_name_suffix`, `vs_name_suffix`) and `default_tenant` are
+# defined in inventories/<env>/group_vars/all.yml. Per-role behavioural
+# defaults (lb_method, monitor, vs port/profiles, snat, *_state) live in
+# roles/<role>/defaults/main.yml and can be overridden per service below.
+#
+# Per-service fields:
+#   name              : logical name; used as the prefix for pool & VS objects
+#   tenant            : (optional) BIG-IP partition; default = default_tenant
+#   virtual_server:
+#     destination     : external VIP address
+#     port            : (optional) VIP port; default = 443
+#     profiles        : (optional) list of profiles attached to the VS.
+#     snat            : (optional) 'automap' | 'none' | <snat-pool-name>
+#   pool:
+#     lb_method       : (optional) load balancing method; default = round-robin
+#     monitor         : (optional) health monitor name; default = minio-health-check
+#     members         : list of { name, address, port }
+#
+# Dry run: `ansible-playbook playbooks/site.yml --check --diff`
+# =============================================================================
+
+services:
+  - name: minio_s3_http_cluster
+    tenant: Common
+    virtual_server:
+      destination: 10.1.40.151
+      port: 9000
+      profiles:
+        - http
+        - tcp
+      snat: automap
+    pool:
+      lb_method: round-robin
+      monitor: minio-health-check
+      members:
+        - { name: minio_node_http_01, address: 10.1.10.100, port: 9000 }
+        - { name: minio_node_http_02, address: 10.1.10.101, port: 9000 }
+        - { name: minio_node_http_03, address: 10.1.10.102, port: 9000 }
+        - { name: minio_node_http_04, address: 10.1.10.103, port: 9000 }

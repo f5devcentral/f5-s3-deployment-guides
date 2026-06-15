@@ -1,0 +1,10 @@
+---
+# Provider block consumed by all f5networks.f5_modules tasks.
+# Values are read from environment variables (see .env.example).
+provider:
+  server: "{{ lookup('env', 'F5_HOST') }}"
+  server_port: "{{ lookup('env', 'F5_SERVER_PORT') | default('443', true) }}"
+  user: "{{ lookup('env', 'F5_USER') }}"
+  password: "{{ lookup('env', 'F5_PASSWORD') }}"
+  validate_certs: "{{ (lookup('env', 'F5_VALIDATE_CERTS') | default('false', true)) | bool }}"
+  transport: rest

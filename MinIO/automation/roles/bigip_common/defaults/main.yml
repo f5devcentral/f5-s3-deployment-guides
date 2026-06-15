@@ -1,0 +1,6 @@
+---
+# bigip_common defaults
+required_env_vars:
+  - F5_HOST
+  - F5_USER
+  - F5_PASSWORD
