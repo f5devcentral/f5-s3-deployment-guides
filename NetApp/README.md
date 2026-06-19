@@ -50,10 +50,10 @@ The lab environment used throughout this guide consists of the following compone
 
 The table below lists the addresses used in the examples. Substitute your own addresses where appropriate.
 
-| Component | VLAN     | Address       | Interface      |
-| --------- | -------- | ------------- | -------------- |
-| BIG-IP    | Internal | 10.150.91.130 | 1.1 (untagged) |
-| BIG-IP    | External | 10.150.92.130 | 1.2 (untagged) |
+| Component | VLAN             | Address       | Interface      |
+| --------- | ---------------- | ------------- | -------------- |
+| BIG-IP    | vlan1.1-internal | 10.150.91.130 | 1.1 (untagged) |
+| BIG-IP    | vlan1.2-external | 10.150.92.130 | 1.2 (untagged) |
 
 ![Lab network topology with BIG-IP internal and external VLANs connecting clients to the StorageGRID cluster](./assets/setup_networking.png)
 
