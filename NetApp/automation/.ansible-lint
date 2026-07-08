@@ -1,0 +1,33 @@
+---
+profile: production
+
+exclude_paths:
+  - .cache/
+  - .github/
+  - collections/
+  - .venv/
+  - venv/
+
+use_default_rules: true
+
+# Skip rules that don't fit a small, env-driven layout.
+skip_list:
+  # We rely on env vars + provider block, not vault.
+  - var-naming[no-role-prefix]
+  # services_file is set in group_vars; vars_files uses it intentionally.
+  - schema[vars]
+
+# Treat these as warnings rather than errors.
+warn_list:
+  - experimental
+  - fqcn[action-core]
+  - role-name
+
+mock_modules:
+  - f5networks.f5_modules.bigip_device_info
+  - f5networks.f5_modules.bigip_node
+  - f5networks.f5_modules.bigip_pool
+  - f5networks.f5_modules.bigip_pool_member
+  - f5networks.f5_modules.bigip_virtual_server
+
+offline: false
