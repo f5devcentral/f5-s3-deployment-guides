@@ -56,7 +56,7 @@ Begin by adding VLANs to the BIG-IP. In the BIG-IP Configuration utility, go to 
 Create the **internal** VLAN:
 ![BIG-IP VLAN creation form for the internal VLAN](./assets/bigip_vlan_create_1_1.png)
 
-- **Name (1):** `vlan1.1-internal`
+- **Name (1):** `internal`
 - **Interface (2):** `1.1`
 - **Tagging (2):** `Untagged`
 - Click **Add (3)**
@@ -64,7 +64,7 @@ Create the **internal** VLAN:
 
 This adds the **internal** VLAN. Now add the **external** VLAN in the same window:
 
-- **Name:** `vlan1.2-external`
+- **Name:** `external`
 - **Interface:** `1.2`
 - **Tagging:** `Untagged`
 - Click **Add**
@@ -83,19 +83,19 @@ Continue by adding Self IPs that anchor the BIG-IP to each VLAN. In the BIG-IP C
 
 First, create a Self IP for the internal network using the following values:
 
-- **Name (1):** `Internal_Self_IP`
-- **IP Address (2):** 10.150.91.130
+- **Name (1):** `internal_self_ip`
+- **IP Address (2):** 10.150.91.145
 - **Netmask (3):** 255.255.255.0
-- **VLAN (4):** vlan1.1-internal
+- **VLAN (4):** internal
 
 ![New Self IP form populated with the internal interface values](./assets/bigip_selfip_create_internal_details.png)
 
 Click **Repeat (5)** to save the internal Self IP and open a fresh form for the external one, then fill in the following values:
 
-- **Name (1):** `External_Self_IP`
-- **IP Address (2):** 10.150.92.130
+- **Name (1):** `external_self_ip`
+- **IP Address (2):** 10.150.92.145
 - **Netmask (3):** 255.255.255.0
-- **VLAN (4):** vlan1.2-external
+- **VLAN (4):** external
 
 ![New Self IP form populated with the external interface values](./assets/bigip_selfip_create_external_details.png)
 
@@ -105,12 +105,12 @@ Click **Finished (5)** to save. Both Self IPs now appear on the list.
 
 ### 2.3 HTTP/HTTPS Custom S3 Health Monitor
 
-To verify that the RING S3 endpoint is reachable, create a custom monitor in BIG-IP. Go to **Local Traffic (1) > Monitors (2)** and click **Create (3)**.
+To verify that the RING endpoint is reachable, create a custom monitor in BIG-IP. Go to **Local Traffic (1) > Monitors (2)** and click **Create (3)**.
 ![BIG-IP custom monitor list with the Create button highlighted](./assets/bigip_monitor_create.png)
 
-- **Type (1):** `HTTPS` or `HTTP`, depending on how your RING S3 endpoint is configured.
-- **Name (2):** `Options_HTTPS_RING`
-- **Send String (3):** `OPTIONS / HTTP/1.1\r\n\r\n`
+- **Type (1):** `HTTPS` or `HTTP`, depending on how your RING endpoint is configured.
+- **Name (2):** `Health_HTTP_RING`
+- **Send String (3):** `GET /_/healthcheck/deep HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n`
 - **Receive String (4):** `HTTP/1.1 200 OK`
 
 ![BIG-IP custom monitor form populated with the RING health check values](./assets/bigip_monitor_details.png)
@@ -135,17 +135,17 @@ Now, define the pool that represents the cluster. Navigate to **Local Traffic (1
 
 Fill in the pool-level details:
 
-- **Name (1):** `ring_Pool`
-- **Health Monitor (2):** `Options_HTTPS_RING`
+- **Name (1):** `Scality_Pool`
+- **Health Monitor (2):** `Health_HTTP_RING`
 - **Load Balancing Method (3):** Least Connections (member)
 
-The `Options_HTTPS_RING` monitor created earlier sends an `OPTIONS` request to each node and marks the node healthy when it receives `HTTP/1.1 200 OK`.
+The `Health_HTTP_RING` monitor created earlier sends a `GET` request to each node's `_/healthcheck/deep` URL and marks the node healthy when it receives `HTTP/1.1 200 OK`.
 
 In the **New Members (4)** section, add the first RING node:
 
-- **Name:** `storagenode-01`
-- **Address:** 10.150.91.106
-- **Service Port:** 18082 (the HTTPS S3 data service port for the RING cluster)
+- **Name:** `StorageNode01`
+- **Address:** 10.150.91.141
+- **Service Port:** 80 (the HTTP S3 data service port for the RING cluster. Specify 443 for HTTPS endpoint)
 
 Click **Add (4)** to save it to the member list. Then enter the next node's details and click **Add (4)** again until all nodes are added. In this example, the RING cluster has three nodes, so add all three nodes in the cluster range 10.150.91.106 through 10.150.91.108 before completing the pool. Once every node appears in the member list, click **Finished (5)**.
 
@@ -222,9 +222,9 @@ With the pool in place, create the virtual server that exposes it. Navigate to *
 
 Fill in the basic details:
 
-- **Name (1):** `RING_S3_Virtual_Server`
+- **Name (1):** `RING_Virtual_Server`
 - **Source Address (2):** `0.0.0.0/0`
-- **Destination Address/Mask (3):** 10.150.92.131 - the virtual IP (VIP) that S3 clients connect to
+- **Destination Address/Mask (3):** 10.150.92.150 - the virtual IP (VIP) that S3 clients connect to
 - **Service Port (4):** 443 (HTTPS)
 
 ![New Virtual Server form with name, destination address, and service port filled in](./assets/bigip_vs_create_details_1.png)
@@ -236,12 +236,12 @@ Next, configure the virtual server details:
 - **3. Protocol Profile (Server) (3):** Set to the custom server TCP profile you created earlier (`s3-tcp-custom-server`)
 - **4. HTTP Client Profile (4):** Set to **HTTP**
 - **5. SSL Profile (Client) (5):** Set to the default client SSL profile (`clientssl`). Skip this if you want to use unencrypted HTTP between S3 clients and the BIG-IP.
-- **6. SSL Profile (Server) (6):** Set to the default server SSL profile (`serverssl`) if your RING cluster serves encrypted S3 traffic.
+- **6. SSL Profile (Server) (6):** Set to the default server SSL profile (`serverssl`) if your RING cluster serves encrypted S3 traffic. Skip if serves only HTTP on port 80.
 - **7. Source Address Translation (7):** Set to **Auto Map** to allow the BIG-IP to manage source address translation for return traffic.
 
 ![Virtual Server form with Source Address Translation set to Auto Map](./assets/bigip_vs_create_details_2.png)
 
-In the **Resources** section, select the `ring_Pool` pool from the **Default Pool (1)** dropdown to bind the virtual server to the backend nodes.
+In the **Resources** section, select the `Scality_Pool` pool from the **Default Pool (1)** dropdown to bind the virtual server to the backend nodes.
 
 Click **Finished (2)** to save the virtual server.
 ![Virtual Server Resources section with ring-cluster selected as the Default Pool](./assets/bigip_vs_create_details_3.png)
@@ -256,7 +256,7 @@ With the virtual server up and at least one healthy pool member, validate that S
 
 #### 2.7.1 Configure the RING Cluster
 
-Before you test traffic, create an S3 bucket, a user, and an access key in the RING cluster.
+Before you test traffic, create an S3 bucket, a user, and an access key in the Scality RING cluster.
 
 ![RING Dashboard](./assets/storagegrid-dashboard.png)
 
