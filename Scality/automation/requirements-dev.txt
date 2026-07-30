@@ -1,0 +1,2 @@
+ansible-lint>=24.12
+yamllint>=1.35

@@ -1,0 +1,6 @@
+---
+monitor_state: present
+ring_monitor_name: Options_HTTPS_RING
+ring_monitor_parent: /Common/https
+ring_monitor_send: "OPTIONS / HTTP/1.1\r\n\r\n"
+ring_monitor_receive: "HTTP/1.1 200 OK"

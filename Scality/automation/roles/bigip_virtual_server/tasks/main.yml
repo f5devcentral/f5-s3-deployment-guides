@@ -1,0 +1,16 @@
+---
+- name: "Ensure virtual servers exist"
+  f5networks.f5_modules.bigip_virtual_server:
+    provider: "{{ provider }}"
+    partition: "{{ item.tenant | default(default_tenant) }}"
+    name: "{{ item.virtual_server.name | default(item.name ~ vs_name_suffix) }}"
+    destination: "{{ item.virtual_server.destination }}"
+    port: "{{ item.virtual_server.port | default(default_vs_port) }}"
+    pool: "{{ item.pool.name | default(item.name ~ pool_name_suffix) }}"
+    profiles: "{{ item.virtual_server.profiles | default(default_vs_profiles) }}"
+    snat: "{{ item.virtual_server.snat | default(default_snat) }}"
+    state: "{{ vs_state }}"
+  loop: "{{ services }}"
+  loop_control:
+    label: "{{ item.virtual_server.name | default(item.name ~ vs_name_suffix) }} ({{ item.virtual_server.destination }}:{{ item.virtual_server.port | default(default_vs_port) }})"
+  tags: [vs, virtual_server]

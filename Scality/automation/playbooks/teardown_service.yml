@@ -1,0 +1,29 @@
+---
+# Tear down a service: VS -> pool -> nodes -> monitor (reverse order).
+# Usage:
+#   ansible-playbook playbooks/teardown_service.yml -e service_name=ring_s3
+- name: "BIG-IP :: teardown service"
+  hosts: bigip
+  gather_facts: false
+  vars_files:
+    - "{{ services_file }}"
+  vars:
+    service_name: ""
+    vs_state: absent
+    pool_state: absent
+    node_state: absent
+    monitor_state: absent
+  pre_tasks:
+    - name: "Resolve target services"
+      ansible.builtin.import_tasks: tasks/_filter_services.yml
+  roles:
+    - role: bigip_common
+      tags: [common, always]
+    - role: bigip_virtual_server
+      tags: [vs]
+    - role: bigip_pool
+      tags: [pool]
+    - role: bigip_nodes
+      tags: [nodes]
+    - role: bigip_monitor_https
+      tags: [monitor]
