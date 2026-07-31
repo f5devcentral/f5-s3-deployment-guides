@@ -145,7 +145,7 @@ In the **New Members (4)** section, add the first RING node:
 
 - **Name:** `StorageNode01`
 - **Address:** 10.150.91.141
-- **Service Port:** 80 (the HTTP S3 data service port for the RING cluster. Specify 443 for HTTPS endpoint)
+- **Service Port:** 80 (the HTTP S3 data service port for the RING cluster; specify 443 for an HTTPS endpoint)
 
 Click **Add (4)** to save it to the member list. Then enter the next node's details and click **Add (4)** again until all nodes are added. In this example, the RING cluster has three nodes, so add all three nodes in the cluster range 10.150.91.106 through 10.150.91.108 before completing the pool. Once every node appears in the member list, click **Finished (5)**.
 
@@ -236,7 +236,7 @@ Next, configure the virtual server details:
 - **3. Protocol Profile (Server) (3):** Set to the custom server TCP profile you created earlier (`s3-tcp-custom-server`)
 - **4. HTTP Client Profile (4):** Set to **HTTP**
 - **5. SSL Profile (Client) (5):** Set to the default client SSL profile (`clientssl`). Skip this if you want to use unencrypted HTTP between S3 clients and the BIG-IP.
-- **6. SSL Profile (Server) (6):** Set to the default server SSL profile (`serverssl`) if your RING cluster serves encrypted S3 traffic. Skip if serves only HTTP on port 80.
+- **6. SSL Profile (Server) (6):** Set to the default server SSL profile (`serverssl`) if your RING cluster serves encrypted S3 traffic. Skip this if it serves only HTTP on port 80.
 - **7. Source Address Translation (7):** Set to **Auto Map** to allow the BIG-IP to manage source address translation for return traffic.
 
 ![Virtual Server form with Source Address Translation set to Auto Map](./assets/bigip_vs_create_details_2.png)
@@ -256,19 +256,19 @@ With the virtual server up and at least one healthy pool member, validate that S
 
 #### 2.7.1 Configure the RING Cluster
 
-Before you test traffic, create an S3 bucket, a user, and an access key in the Scality RING cluster. After the login click the **S3 Services**
-
-##### 2.7.1.1 Create Account
+Before you test traffic, create an S3 bucket, a user, and an access key in the Scality RING cluster. After logging in, click **S3 Services**.
 
 ![RING Dashboard](./assets/scality_overview.png)
 
-The S3 Services page allows access to Scality UI services. To create a user, bucket and access key/secret the `S3 Console` is used. Click the **Log in (1)** button.
+##### 2.7.1.1 Create Account
+
+The S3 Services page provides access to Scality UI services. To create a user, bucket, access key, and secret key, use the `S3 Console`. Click the **Log in (1)** button.
 ![S3 Services](./assets/scality_s3services.png)
 
-To create a test user, in the appeared `Accounts` page click **Create accoung (1)** button.
+To create a test user, click the **Create account (1)** button on the `Accounts` page.
 ![Accounts Dashboard](./assets/scality_accounts.png)
 
-The popup with user info will appear. Specify the user infomation:
+A dialog with user information will appear. Enter the following details:
 
 - **Account name (1):** warpuser
 - **Email address (2):** warpuser@test.domain
@@ -286,10 +286,10 @@ The successfully created account will be added to the accounts list:
 As a next step, to create resources under the new account, the current account needs to be logged out. Click **Admin account (1)** profile at the top right part of the screen. Select **Log out (2)**.
 ![Logout admin](./assets/scality_accounts_logout.png)
 
-In login form enter the new created user credentials:
+In the login form, enter the newly created user's credentials:
 
 - **USERNAME: (1)** warpuser
-- **PASSWORD: (2)** password spicified during account creation
+- **PASSWORD: (2)** password specified during account creation
 
 Click **Submit (3)** button.
 
@@ -297,10 +297,10 @@ Click **Submit (3)** button.
 
 ##### 2.7.1.2 Create S3 User
 
-After login to the account you can create an S3 user. Click **+ (1)** button.
+After logging in to the account, you can create an S3 user. Click the **+ (1)** button.
 ![Add S3 User](./assets/scality_add_s3_user.png)
 
-In the appeared dialog:
+In the dialog that appears:
 
 - **Username: (1)** warp-s3-user
 - Select **FullAccessGroup (2)**
@@ -312,10 +312,10 @@ Click **Submit (3)** button.
 The created user will be shown in the users list. Select the **Key (1)** button in the actions list.
 ![Create S3 user result](./assets/scality_warp_s3_user_create_res.png)
 
-In order to connect to the S3 environment the user needs to have an`Access Key` and a `Secret`. Click the **+ Generate a new key (1)** button
+To connect to the S3 environment, the user needs an `Access Key` and a `Secret`. Click the **+ Generate a new key (1)** button.
 ![Create S3 user result](./assets/scality_warp_s3_user_access_keys.png)
 
-The new `Access Key` will be generated. Save the **AccessKey (1)** and click **Show (2)** button near the **SecretAccessKey**. Save the `Secret` too. You will need them further. Make sure to not share the credentials with anyone.
+A new `Access Key` will be generated. Save the **AccessKey (1)** and click the **Show (2)** button next to the **SecretAccessKey**. Save the `Secret` too. You will need both later. Do not share these credentials with anyone.
 
 ![S3 user access credentials](./assets/scality_warp_s3_user_access_keys_res.png)
 
@@ -323,10 +323,10 @@ Click **Close (3)** button to close the current dialog.
 
 ##### 2.7.1.3 Create S3 Bucket
 
-In Scality Ring administration console select **S3 Services (1)** and click **Login (2)** to `S3 Browser`.
+In the Scality RING administration console, select **S3 Services (1)** and click **Login (2)** to open the `S3 Browser`.
 ![Scality Ring S3 Browser Login](./assets/scality_ring_s3browser.png)
 
-Then use saved `Access key` and `Secret key`to login. Enter access key to **Access Key (1)** field and **Secret key (2)** field.
+Then use the saved `Access key` and `Secret key` to log in. Enter them in the **Access Key (1)** and **Secret key (2)** fields.
 
 ![Scality Ring S3 Browser Login](./assets/scality_s3browser_login.png)
 
@@ -335,7 +335,7 @@ Click **LOGIN (3)** button.
 Click **CREATE BUCKET (1)** button.
 ![Scality buckets](./assets/scality_s3browser_buckets.png)
 
-The create bucket dialot will appear. Specify `warp-connectivity-test` for **Bucket Name (1)** and click **CREATE (2)** button.
+The create bucket dialog will appear. Specify `warp-connectivity-test` for **Bucket Name (1)** and click **CREATE (2)** button.
 ![Scality create bucket](./assets/scality_bucket_create.png)
 
 Bucket will be created:
