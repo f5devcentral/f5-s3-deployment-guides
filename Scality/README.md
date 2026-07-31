@@ -256,124 +256,90 @@ With the virtual server up and at least one healthy pool member, validate that S
 
 #### 2.7.1 Configure the RING Cluster
 
-Before you test traffic, create an S3 bucket, a user, and an access key in the Scality RING cluster.
+Before you test traffic, create an S3 bucket, a user, and an access key in the Scality RING cluster. After the login click the **S3 Services**
 
-![RING Dashboard](./assets/storagegrid-dashboard.png)
+##### 2.7.1.1 Create Account
 
-Click **Nodes (1)** to review the cluster configuration:
-![RING Nodes](./assets/storagegrid_nodes.png)
+![RING Dashboard](./assets/scality_overview.png)
 
-##### 2.7.1.1 Set Up a Tenant
+The S3 Services page allows access to Scality UI services. To create a user, bucket and access key/secret the `S3 Console` is used. Click the **Log in (1)** button.
+![S3 Services](./assets/scality_s3services.png)
 
-In the left sidebar, select **Tenants (1)** and click **Create (2)**.
-![RING Nodes](./assets/storagegrid_tenant_create.png)
+To create a test user, in the appeared `Accounts` page click **Create accoung (1)** button.
+![Accounts Dashboard](./assets/scality_accounts.png)
 
-In the wizard, enter `acme` as the tenant **Name (1)** and click **Continue (2)**.
-![RING Tenant Create - Name](./assets/storagegrid_tenant_create_details_1.png)
+The popup with user info will appear. Specify the user infomation:
 
-Select the **Allow platform services (1)**, **Use own identity source (2)**, and **Allow S3 Select (3)** permission checkboxes, then click **Continue (4)**.
-![RING Tenant Create - Permissions](./assets/storagegrid_tenant_create_details_2.png)
+- **Account name (1):** warpuser
+- **Email address (2):** warpuser@test.domain
+- **Password (3):** specify a password here
+- **Password confirmation (4):** confirm the password specified before
 
-Enter **(1)** and confirm **(2)** the password for the root user. Then click **Create tenant (3)**.
-![RING Tenant Create - Root Password](./assets/storagegrid_tenant_create_details_3.png)
+Remember the password and account name. We will need them later.
+![Scality Account Create](./assets/scality_create_acc.png)
 
-A success message appears:
-![RING Tenant Create - Success](./assets/storagegrid_tenant_create_result.png)
+Click the **Submit (5)** button to create a user.
 
-Click **Finish (1)**.
+The successfully created account will be added to the accounts list:
+![Scality Accounts List with a new account](./assets/scality_create_acc_result.png)
 
-##### 2.7.1.2 Log In to the Tenant
+As a next step, to create resources under the new account, the current account needs to be logged out. Click **Admin account (1)** profile at the top right part of the screen. Select **Log out (2)**.
+![Logout admin](./assets/scality_accounts_logout.png)
 
-Select the tenant in which the test bucket will be created. In the sidebar, click **Tenants (1)**, then select the newly created **acme (2)** tenant:
-![RING Tenant Select](./assets/storagegrid_tenant_select.png)
+In login form enter the new created user credentials:
 
-Click **Sign in (1)**. You must sign in to the tenant to manage tenant resources:
+- **USERNAME: (1)** warpuser
+- **PASSWORD: (2)** password spicified during account creation
 
-![RING Tenant Login](./assets/storagegrid_tenant_signin.png)
+Click **Submit (3)** button.
 
-In the sign-in window, enter `root` as the **Username (1)** and enter the password **(2)** you specified for the root user when creating the tenant. Click **Sign in (3)**.
-![RING Tenant Login](./assets/storagegrid_tenant_signin_password.png)
+![warpuser login](./assets/scality_warpuser_login.png)
 
-##### 2.7.1.3 Create a Bucket
+##### 2.7.1.2 Create S3 User
 
-From the tenant dashboard, click **Buckets (1)**, then click **Create bucket (2)**:
-![RING Tenant Create Bucket ](./assets/storagegrid_tenant_acme_create_bucket.png)
+After login to the account you can create an S3 user. Click **+ (1)** button.
+![Add S3 User](./assets/scality_add_s3_user.png)
 
-Enter `warp-connectivity-test` as the **Bucket name (1)** and click **Continue (2)**:
-![RING Tenant Create Bucket - Name ](./assets/storagegrid_tenant_acme_create_bucket_details_1.png)
+In the appeared dialog:
 
-Scroll down **(1)** through the features list until you see the **Create bucket (2)** button, then click it.
-![RING Tenant Create Bucket - Name ](./assets/storagegrid_tenant_acme_create_bucket_details_2.png)
+- **Username: (1)** warp-s3-user
+- Select **FullAccessGroup (2)**
 
-After the bucket is created, click **Finish (1)**:
-![RING Tenant Create Bucket - Name ](./assets/storagegrid_tenant_acme_create_bucket_details_3.png)
+![Create S3 user](./assets/scality_warp_s3_user_create.png)
 
-##### 2.7.1.4 Create a Test User
+Click **Submit (3)** button.
 
-To send traffic to the bucket, create a user with an access key. Click **Users (1)**, then click **Create local user (2)**:
-![RING Tenant Create User ](./assets/storagegrid_tenant_acme_create_user.png)
+The created user will be shown in the users list. Select the **Key (1)** button in the actions list.
+![Create S3 user result](./assets/scality_warp_s3_user_create_res.png)
 
-Enter `warp-test-user` in the **Full name (1)** and **Username (2)** fields. Enter and confirm a password in the **Password (3)** and **Confirm password (4)** fields. This user only needs data access to S3 buckets, so select **Yes** for the **Deny access (5)** option. When the fields are complete, click **Continue (6)**.
-![RING Tenant Create User - Properties](./assets/storagegrid_tenant_acme_create_user_details_1.png)
+In order to connect to the S3 environment the user needs to have an`Access Key` and a `Secret`. Click the **+ Generate a new key (1)** button
+![Create S3 user result](./assets/scality_warp_s3_user_access_keys.png)
 
-Click **Create user (1)** in the last wizard step:
-![RING Tenant Create User - Create User](./assets/storagegrid_tenant_acme_create_user_details_2.png)
+The new `Access Key` will be generated. Save the **AccessKey (1)** and click **Show (2)** button near the **SecretAccessKey**. Save the `Secret` too. You will need them further. Make sure to not share the credentials with anyone.
 
-##### 2.7.1.5 Create a Group for Test Bucket Access
+![S3 user access credentials](./assets/scality_warp_s3_user_access_keys_res.png)
 
-To allow test users to access only the test bucket, create a security group. Click **Groups (1)**, then click **Create group (2)**:
-![RING Tenant Create Security Group](./assets/storagegrid_tenant_acme_create_group.png)
+Click **Close (3)** button to close the current dialog.
 
-Enter `warp-connectivity-test-group` as both the **Display name (1)** and **Unique name (2)**, then click **Continue (3)**.
-![RING Tenant Create Security Group](./assets/storagegrid_tenant_acme_create_group_details_1.png)
+##### 2.7.1.3 Create S3 Bucket
 
-Select **Read-write (1)** and click **Continue (2)**:
-![RING Tenant Create Security Group - Actions](./assets/storagegrid_tenant_acme_create_group_details_2.png)
+In Scality Ring administration console select **S3 Services (1)** and click **Login (2)** to `S3 Browser`.
+![Scality Ring S3 Browser Login](./assets/scality_ring_s3browser.png)
 
-Select **Custom (1)** for **S3 group policy (2)** and specify this policy:
+Then use saved `Access key` and `Secret key`to login. Enter access key to **Access Key (1)** field and **Secret key (2)** field.
 
-```json
-{
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "s3:*",
-      "Resource": [
-        "arn:aws:s3:::warp-connectivity-test",
-        "arn:aws:s3:::warp-connectivity-test/*"
-      ]
-    }
-  ]
-}
-```
+![Scality Ring S3 Browser Login](./assets/scality_s3browser_login.png)
 
-Both resources are required. The bucket ARN covers bucket-level checks, and the object ARN covers the objects Warp writes, reads, and deletes during the mixed workload.
+Click **LOGIN (3)** button.
 
-Click **Continue (3)** when finished.
-![RING Tenant Create Security Group - Policy](./assets/storagegrid_tenant_acme_create_group_details_3.png)
+Click **CREATE BUCKET (1)** button.
+![Scality buckets](./assets/scality_s3browser_buckets.png)
 
-The last step is to assign the user to the group. In the dialog, select `warp-test-user` **(1)** and click **Create group (2)**.
-![RING Tenant Create Security Group - Users](./assets/storagegrid_tenant_acme_create_group_details_4.png)
+The create bucket dialot will appear. Specify `warp-connectivity-test` for **Bucket Name (1)** and click **CREATE (2)** button.
+![Scality create bucket](./assets/scality_bucket_create.png)
 
-The group is created:
-![RING Tenant Create Security Group - Users](./assets/storagegrid_tenant_acme_create_group_result.png)
-
-##### 2.7.1.6 Create an Access Key for the Test User
-
-To allow the user to access the S3 bucket programmatically, create an access key. Select **Users (1)**, then select `warp-test-user` **(2)** from the users list:
-![RING Tenant Create Access Key](./assets/storagegrid_tenant_acme_access_key_user.png)
-
-Select the **Access keys (1)** tab and click **Create key (2)**:
-![RING Tenant Create Access Key](./assets/storagegrid_tenant_acme_access_key_details_1.png)
-
-Select **Set an expiration time (1)**, then choose the next day **(2)** at **12:00 AM (3)**. Do not create test keys without an expiration date. Click **Create access key (4)**:
-![RING Tenant Create Access Key](./assets/storagegrid_tenant_acme_access_key_details_2.png)
-
-Copy and save the **Access key ID (1)** and **Secret access key (2)**. Click **Finish (3)**.
-![RING Tenant Create Access Key](./assets/storagegrid_tenant_acme_access_key_details_3.png)
-
-The created access key will appear in the user's access key list:
-![RING Tenant Create Access Key](./assets/storagegrid_tenant_acme_access_key_result.png)
+Bucket will be created:
+![Scality create bucket result](./assets/scality_bucket_create_res.png)
 
 #### 2.7.2 Use Warp to Test Connectivity to the RING S3 Cluster Through the BIG-IP Virtual Server
 
@@ -386,7 +352,7 @@ Download and install the Warp CLI from the official download page:
 Configure Warp with the BIG-IP virtual server address as the S3 endpoint, along with the access key ID and secret access key generated on the RING cluster, and run a short mixed-workload test:
 
 ```bash
-export WARP_HOST=10.150.92.131:443               # the BIG-IP virtual server address and port
+export WARP_HOST=10.150.92.150:443               # the BIG-IP virtual server address and port
 export WARP_ACCESS_KEY=your-access-key-id        # the access key ID saved earlier
 export WARP_SECRET_KEY=your-secret-access-key    # the secret access key saved earlier
 
@@ -413,7 +379,7 @@ jq -r '
 ' test_result.json
 
 
-Requests: 12 | Objects: 12 | Bytes: 8192 | Errors: 0
+Requests: 11 | Objects: 11 | Bytes: 11264 | Errors: 0
 ```
 
 An error count of zero confirms that every request reached the RING cluster and returned a successful response through the virtual server.
