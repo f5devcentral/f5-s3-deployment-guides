@@ -1,5 +1,5 @@
 ---
-- name: "Ensure RING HTTPS health monitor exists"
+- name: "Ensure RING HTTP health monitor exists"
   f5networks.f5_modules.bigip_monitor_https:
     provider: "{{ provider }}"
     partition: "{{ default_tenant }}"

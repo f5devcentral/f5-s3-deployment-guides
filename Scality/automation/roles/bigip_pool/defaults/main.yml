@@ -1,6 +1,6 @@
 ---
 pool_state: present
 default_lb_method: least-connections-member
-default_monitor: Options_HTTPS_RING
+default_monitor: Health_HTTP_RING
 # pool_name_suffix is defined in inventories/.../group_vars/all.yml
 # (shared with bigip_virtual_server).

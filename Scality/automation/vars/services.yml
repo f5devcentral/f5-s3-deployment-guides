@@ -36,20 +36,18 @@ services:
     tenant: Common
     virtual_server:
       name: RING_S3_Virtual_Server
-      destination: 10.150.92.131
+      destination: 10.150.92.150
       port: 443
       profiles:
         - http
         - name: clientssl
           context: client-side
-        - name: serverssl
-          context: server-side
       snat: automap
     pool:
       name: ring_Pool
       lb_method: least-connections-member
-      monitor: Options_HTTPS_RING
+      monitor: Health_HTTP_RING
       members:
-        - { name: storagenode-01, address: 10.150.91.106, port: 18082 }
-        - { name: storagenode-02, address: 10.150.91.107, port: 18082 }
-        - { name: storagenode-03, address: 10.150.91.108, port: 18082 }
+        - { name: StorageNode01, address: 10.150.91.141, port: 80 }
+        - { name: StorageNode02, address: 10.150.91.142, port: 80 }
+        - { name: StorageNode03, address: 10.150.91.143, port: 80 }
