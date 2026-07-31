@@ -1,8 +1,8 @@
-# Scality RING Cluster with F5 BIG-IP Local Traffic Manager
+# Scality RING with F5 BIG-IP Local Traffic Manager
 
-This guide explains how to deploy F5 BIG‑IP Local Traffic Manager (LTM) in front of the S3 service of a Scality RING object store. It covers the network configuration, custom S3 health monitor, pool definition, and virtual server setup required to expose the RING S3 service through a single, highly available endpoint.
+This guide explains how to deploy F5 BIG‑IP Local Traffic Manager (LTM) in front of Scality RING's S3 service. It covers the network configuration, custom S3 health monitor, pool definition, and virtual server setup required to expose the RING S3 service through a single, highly available endpoint.
 
-This guide is intended for network engineers, system administrators, and storage operators who run Scality RING and want to use F5 BIG-IP LTM to improve the performance, availability, and scalability of its S3 service. Readers should be familiar with basic L2/L3 networking concepts and have administrative access to both BIG-IP and the Scality RING cluster.
+This guide is intended for network engineers, system administrators, and storage operators who run Scality RING and want to use F5 BIG-IP LTM to improve the performance, availability, and scalability of its S3 service. Readers should be familiar with basic L2/L3 networking concepts and have administrative access to both BIG-IP and Scality RING.
 
 > **Note:** This document is demonstration content intended to illustrate a reference deployment. Adapt it to your organization's standards and needs by substituting your own addresses, naming conventions, security policies, and operational practices before applying any of these steps in a production environment.
 
@@ -19,7 +19,7 @@ This guide is intended for network engineers, system administrators, and storage
   - [2.5 Optimization for S3 Traffic](#25-optimization-for-s3-traffic)
   - [2.6 Virtual Server](#26-virtual-server)
   - [2.7 Test the Virtual Server](#27-test-the-virtual-server)
-    - [2.7.1 Configure the RING Cluster](#271-configure-the-ring-cluster)
+    - [2.7.1 Configure Scality RING](#271-configure-scality-ring)
     - [2.7.2 Use Warp to Test Connectivity to the RING S3 Service Through the BIG-IP Virtual Server](#272-use-warp-to-test-connectivity-to-the-ring-s3-service-through-the-big-ip-virtual-server)
   - [2.8 Automation with Ansible](#28-automation-with-ansible)
 
@@ -30,10 +30,10 @@ This guide is intended for network engineers, system administrators, and storage
 The lab environment used throughout this guide consists of the following components:
 
 - F5 BIG-IP 21.1.0
-- Scality RING cluster
+- Scality RING deployment
 - Warp CLI tool for load testing
 
-![Lab setup overview showing BIG-IP, Scality RING cluster, and S3 clients](./assets/setup_overview.png)
+![Lab setup overview showing BIG-IP, Scality RING, and S3 clients](./assets/setup_overview.png)
 
 ### 1.2 Networking
 
@@ -44,7 +44,7 @@ The table below lists the addresses used in the examples. Substitute your own ad
 | BIG-IP    | internal | 10.150.91.145/24 | 1.1 (untagged) |
 | BIG-IP    | external | 10.150.92.145/24 | 1.2 (untagged) |
 
-![Lab network topology with BIG-IP internal and external VLANs connecting clients to the RING cluster](./assets/setup_networking.png)
+![Lab network topology with BIG-IP internal and external VLANs connecting clients to Scality RING](./assets/setup_networking.png)
 
 ## 2. BIG-IP Configuration
 
@@ -75,7 +75,7 @@ The VLAN list should look like this:
 
 ### 2.2 Configure Self IPs
 
-A Self IP is an IP address assigned to the BIG-IP on a specific VLAN. The BIG-IP uses Self IPs to source traffic and respond to ARP requests. Every VLAN that participates in client or server traffic needs at least one Self IP. Because this lab has two participating VLANs, internal (facing the RING cluster) and external (facing S3 clients), it requires two Self IPs, one per VLAN.
+A Self IP is an IP address assigned to the BIG-IP on a specific VLAN. The BIG-IP uses Self IPs to source traffic and respond to ARP requests. Every VLAN that participates in client or server traffic needs at least one Self IP. Because this lab has two participating VLANs, internal (facing Scality RING) and external (facing S3 clients), it requires two Self IPs, one per VLAN.
 
 Continue by adding Self IPs that anchor the BIG-IP to each VLAN. In the BIG-IP Configuration utility, go to **Network (1) > Self IPs (2)** and click **Create (3)**.
 
@@ -105,10 +105,10 @@ Click **Finished (5)** to save. Both Self IPs now appear on the list.
 
 ### 2.3 HTTP/HTTPS Custom S3 Health Monitor
 
-To verify that the RING endpoint is reachable, create a custom monitor in BIG-IP. Go to **Local Traffic (1) > Monitors (2)** and click **Create (3)**.
+To verify that the RING S3 service is reachable, create a custom monitor in BIG-IP. Go to **Local Traffic (1) > Monitors (2)** and click **Create (3)**.
 ![BIG-IP custom monitor list with the Create button highlighted](./assets/bigip_monitor_create.png)
 
-- **Type (1):** `HTTPS` or `HTTP`, depending on how your RING endpoint is configured.
+- **Type (1):** `HTTPS` or `HTTP`, depending on how your RING S3 endpoint is configured.
 - **Name (2):** `Health_HTTP_RING`
 - **Send String (3):** `GET /_/healthcheck/deep HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n`
 - **Receive String (4):** `HTTP/1.1 200 OK`
@@ -121,15 +121,15 @@ Click **Finished (5)** to save the new custom monitor.
 
 A pool is a logical group of backend servers, called pool members, across which the BIG-IP load balances traffic. The BIG-IP runs a health monitor against each member and forwards traffic only to members that pass the monitor. In this guide, the pool members are the nodes that provide the Scality RING S3 service, and the BIG-IP distributes incoming S3 requests across them.
 
-![Lab setup overview showing BIG-IP, RING cluster, and S3 clients](./assets/setup_overview.png)
+![Lab setup overview showing BIG-IP, Scality RING, and S3 clients](./assets/setup_overview.png)
 
-In the diagram above, the blue lines on either side of the BIG-IP represent the two S3 traffic segments. The lines on the left side show traffic between S3 clients and the BIG-IP. The lines on the right side show traffic between the BIG-IP and the Scality RING nodes. Each segment can be unencrypted or encrypted, and you can decide this for each segment independently. Some organizations require storage traffic to be encrypted all the way from the S3 client to the S3 storage node, while others do not.
+In the diagram above, the blue lines on either side of the BIG-IP represent the two S3 traffic segments. The lines on the left side show traffic between S3 clients and the BIG-IP. The lines on the right side show traffic between the BIG-IP and the nodes providing the RING S3 service. Each segment can be unencrypted or encrypted, and you can decide this for each segment independently. Some organizations require storage traffic to be encrypted all the way from the S3 client to the S3 storage node, while others do not.
 
 The pool configuration in this section controls the right-side segment: traffic between the BIG-IP and the nodes that provide the Scality RING S3 service. The left-side segment, between the S3 client and the BIG-IP, is controlled by the virtual server (see [2.6 Virtual Server](#26-virtual-server)). This guide provides steps for both unencrypted and encrypted options on each segment, so you can choose the combination that meets your organization's requirements.
 
-#### 2.4.1 Pool for S3 Traffic from BIG-IP to the Scality RING Cluster
+#### 2.4.1 Pool for S3 Traffic from BIG-IP to Scality RING
 
-Now, define the pool that represents the cluster. Navigate to **Local Traffic (1) > Pools (2)** and click **Create (3)**.
+Now, define the pool that represents the RING S3 service. Navigate to **Local Traffic (1) > Pools (2)** and click **Create (3)**.
 
 ![BIG-IP Pools list page with the Create button highlighted](./assets/bigip_pool.png)
 
@@ -157,11 +157,11 @@ The new pool now appears in the Pools list.
 
 ### 2.5 Optimization for S3 Traffic
 
-Tuning the BIG-IP configuration for the specific characteristics of S3 traffic can improve performance and efficiency. This section outlines some of the key optimizations to consider for an S3 workload, including connection limits and TCP profile settings. These optimizations are optional but can help you get the most out of your BIG-IP deployment in front of a Scality RING cluster.
+Tuning the BIG-IP configuration for the specific characteristics of S3 traffic can improve performance and efficiency. This section outlines some of the key optimizations to consider for an S3 workload, including connection limits and TCP profile settings. These optimizations are optional but can help you get the most out of your BIG-IP deployment in front of Scality RING.
 
 #### 2.5.1 TCP Profiles
 
-A TCP profile controls how the BIG-IP manages TCP connections, such as timers, buffer sizes, and congestion control. The BIG-IP ships with built-in profiles, but the default values are not ideal for RING S3 traffic. For better performance, F5 engineers recommend creating two custom profiles: one for the client side (between the S3 client and the BIG-IP) and one for the server side (between the BIG-IP and the RING nodes). Each side has different needs, so the settings are tuned separately.
+A TCP profile controls how the BIG-IP manages TCP connections, such as timers, buffer sizes, and congestion control. The BIG-IP ships with built-in profiles, but the default values are not ideal for RING S3 traffic. For better performance, F5 engineers recommend creating two custom profiles: one for the client side (between the S3 client and the BIG-IP) and one for the server side (between the BIG-IP and the nodes providing the RING S3 service). Each side has different needs, so the settings are tuned separately.
 
 The following sections walk through both profiles. Start by navigating to **Local Traffic (1) > Profiles (2) > Protocol (3) > TCP (4)** and clicking **Create (5)**.
 
@@ -210,9 +210,9 @@ Click **Finished** at the bottom of the page to save the server's TCP profile.
 
 ### 2.6 Virtual Server
 
-A virtual server is the listener that clients connect to. It binds an IP address and port on the BIG-IP to a pool, applies any configured profiles and policies, and forwards traffic to a healthy pool member according to the load balancing method. For this S3 deployment, the virtual server is the single endpoint that S3 clients target instead of talking to individual RING nodes.
+A virtual server is the listener that clients connect to. It binds an IP address and port on the BIG-IP to a pool, applies any configured profiles and policies, and forwards traffic to a healthy pool member according to the load balancing method. For this S3 deployment, the virtual server is the single endpoint that S3 clients target instead of connecting directly to individual nodes providing the RING S3 service.
 
-As shown in the setup diagram in the [Pool section](#24-pool), the virtual server controls the left segment of traffic, between the S3 client(s) and the BIG-IP. Like the pool, the virtual server can be configured for unencrypted (HTTP) or encrypted (HTTPS) traffic, and this guide provides the steps for both. The two segments are independent: you can, for example, terminate TLS from clients at the BIG-IP while sending either encrypted or unencrypted traffic onward to the RING cluster.
+As shown in the setup diagram in the [Pool section](#24-pool), the virtual server controls the left segment of traffic, between the S3 client(s) and the BIG-IP. Like the pool, the virtual server can be configured for unencrypted (HTTP) or encrypted (HTTPS) traffic, and this guide provides the steps for both. The two segments are independent: you can, for example, terminate TLS from clients at the BIG-IP while sending either encrypted or unencrypted traffic onward to Scality RING.
 
 #### 2.6.1 Virtual Server for S3 Client Traffic to BIG-IP
 
@@ -236,7 +236,7 @@ Next, configure the virtual server details:
 - **3. Protocol Profile (Server) (3):** Set to the custom server TCP profile you created earlier (`s3-tcp-custom-server`)
 - **4. HTTP Client Profile (4):** Set to **HTTP**
 - **5. SSL Profile (Client) (5):** Set to the default client SSL profile (`clientssl`). Skip this if you want to use unencrypted HTTP between S3 clients and the BIG-IP.
-- **6. SSL Profile (Server) (6):** Set to the default server SSL profile (`serverssl`) if your RING cluster serves encrypted S3 traffic. Skip this if it serves only HTTP on port 80.
+- **6. SSL Profile (Server) (6):** Set to the default server SSL profile (`serverssl`) if your RING S3 service uses encryption. Skip this if it serves only HTTP on port 80.
 - **7. Source Address Translation (7):** Set to **Auto Map** to allow the BIG-IP to manage source address translation for return traffic.
 
 ![Virtual Server form with Source Address Translation set to Auto Map](./assets/bigip_vs_create_details_2.png)
@@ -254,7 +254,7 @@ The virtual server now appears in the list. A green circle next to its name indi
 
 With the virtual server up and at least one healthy pool member, validate that S3 traffic flows end to end through the BIG-IP.
 
-#### 2.7.1 Configure the RING Cluster
+#### 2.7.1 Configure Scality RING
 
 Before you test traffic, create an account, an S3 user, access credentials, and an S3 bucket in Scality RING. After logging in to the RING management interface, click **S3 Services**.
 
