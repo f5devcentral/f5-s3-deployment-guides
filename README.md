@@ -8,11 +8,12 @@ The guides share a common architecture: S3 clients connect to a BIG-IP virtual s
 
 ## Guides
 
-| Storage platform | Guide | Automation |
-| ---------------- | ----- | ---------- |
-| **Dell ObjectScale** | [Dell/README.md](./Dell/README.md) | [Dell/automation/](./Dell/automation/) |
-| **MinIO AIStor** | [MinIO/README.md](./MinIO/README.md) | [MinIO/automation/](./MinIO/automation/) |
-| **NetApp StorageGRID** | [NetApp/README.md](./NetApp/README.md) | [NetApp/automation/](./NetApp/automation/) |
+| Storage platform       | Guide                                    | Automation                                   |
+| ---------------------- | ---------------------------------------- | -------------------------------------------- |
+| **Dell ObjectScale**   | [Dell/README.md](./Dell/README.md)       | [Dell/automation/](./Dell/automation/)       |
+| **MinIO AIStor**       | [MinIO/README.md](./MinIO/README.md)     | [MinIO/automation/](./MinIO/automation/)     |
+| **NetApp StorageGRID** | [NetApp/README.md](./NetApp/README.md)   | [NetApp/automation/](./NetApp/automation/)   |
+| **Scality RING**       | [Scality/README.md](./Scality/README.md) | [Scality/automation/](./Scality/automation/) |
 
 Each guide covers:
 
@@ -25,7 +26,7 @@ Each guide covers:
 ## Prerequisites
 
 - An F5 BIG-IP running a supported version (the guides use BIG-IP 21.1.0; the Dell guide also covers rSeries/F5OS tenant provisioning).
-- A deployed, reachable S3 object storage cluster (Dell ObjectScale, MinIO AIStor, or NetApp StorageGRID).
+- A deployed, reachable S3 object storage cluster (Dell ObjectScale, MinIO AIStor, NetApp StorageGRID, or Scality RING).
 - Administrative access to both the BIG-IP and the storage cluster.
 - Familiarity with basic L2/L3 networking concepts.
 - For validation: the [MinIO WARP](https://www.min.io/download/minio-warp) CLI and `jq`.

@@ -1,0 +1,24 @@
+---
+- name: "Validate required environment variables are set"
+  ansible.builtin.assert:
+    that:
+      - "lookup('env', item) | length > 0"
+    fail_msg: "Environment variable {{ item }} is not set. See .env.example."
+  loop: "{{ required_env_vars }}"
+  run_once: true
+  tags: [always]
+
+- name: "Verify connectivity to BIG-IP (device info)"
+  f5networks.f5_modules.bigip_device_info:
+    provider: "{{ provider }}"
+    gather_subset:
+      - system-info
+  register: _bigip_info
+  tags: [always, smoke]
+
+- name: "Show BIG-IP version"
+  ansible.builtin.debug:
+    msg: >-
+      Connected to {{ provider.server }} —
+      version {{ _bigip_info.system_info.product_version | default('unknown') }}
+  tags: [always, smoke]

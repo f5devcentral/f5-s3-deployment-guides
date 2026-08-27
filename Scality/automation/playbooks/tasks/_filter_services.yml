@@ -1,0 +1,22 @@
+---
+# Filter `services` to a single entry when `service_name` is provided,
+# fail loudly if nothing matches, and report what was selected.
+# Imported by deploy_service.yml and teardown_service.yml.
+- name: "Filter services by service_name (if provided)"
+  ansible.builtin.set_fact:
+    services: >-
+      {{
+        services
+        | selectattr('name', 'equalto', service_name)
+        | list
+      }}
+  when: service_name | length > 0
+
+- name: "Fail when filter matched nothing"
+  ansible.builtin.assert:
+    that: services | length > 0
+    fail_msg: "No services matched service_name='{{ service_name }}'."
+
+- name: "Show selected services"
+  ansible.builtin.debug:
+    msg: "Selected: {{ services | map(attribute='name') | list }}"

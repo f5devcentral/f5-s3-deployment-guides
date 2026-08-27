@@ -26,3 +26,5 @@ venv/
 .vscode/
 
 .DS_Store
+
+*.docx

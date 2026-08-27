@@ -1,0 +1,11 @@
+---
+- name: "Ensure RING HTTP health monitor exists"
+  f5networks.f5_modules.bigip_monitor_https:
+    provider: "{{ provider }}"
+    partition: "{{ default_tenant }}"
+    name: "{{ ring_monitor_name }}"
+    parent: "{{ ring_monitor_parent }}"
+    send: "{{ ring_monitor_send }}"
+    receive: "{{ ring_monitor_receive }}"
+    state: "{{ monitor_state }}"
+  tags: [monitor]
